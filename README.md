@@ -11,6 +11,8 @@ Classical network implemented by pytorch
 
 **VGG:**
 
+Very Deep Convolutional Networks for Large-Scale Image Recognition,Karen Simonyan,2014
+
 
 
 **ResNet:**
