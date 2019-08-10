@@ -54,12 +54,34 @@ class InceptionV1(nn.Module):
             nn.MaxPool2d(kernel_size=3, stride=2, padding=1),
         )
 
-        self.block4 = nn.Sequential(
-            InceptionV1Module(in_channels=480, out_channels1=192, out_channels2reduce=96, out_channels2=208,out_channels3reduce=16, out_channels3=48, out_channels4=64),
-            InceptionV1Module(in_channels=512, out_channels1=160, out_channels2reduce=112, out_channels2=224,out_channels3reduce=24, out_channels3=64, out_channels4=64),
-            InceptionV1Module(in_channels=512, out_channels1=128, out_channels2reduce=128, out_channels2=256,out_channels3reduce=24, out_channels3=64, out_channels4=64),
-            InceptionV1Module(in_channels=512, out_channels1=112, out_channels2reduce=144, out_channels2=288,out_channels3reduce=32, out_channels3=64, out_channels4=64),
-            InceptionV1Module(in_channels=528, out_channels1=256, out_channels2reduce=160, out_channels2=320,out_channels3reduce=32, out_channels3=128, out_channels4=128),
+        self.block4_1 = InceptionV1Module(in_channels=480, out_channels1=192, out_channels2reduce=96, out_channels2=208,out_channels3reduce=16, out_channels3=48, out_channels4=64)
+
+        self.auxiliary1_avgpool = nn.AvgPool2d(kernel_size=5, stride=3)
+        self.auxiliary1_conv1 = ConvBN(in_channels=512, out_channels=128, kernel_size=1)
+        self.auxiliary1_linear1 = nn.Linear(in_features=128*4*4, out_features=1024)
+        self.auxiliary1_relu = nn.ReLU6(inplace=True)
+        self.auxiliary1_dropout = nn.Dropout(p=0.7)
+        self.auxiliary1_linear2 = nn.Linear(in_features=1024, out_features=num_class)
+
+        self.block4_2 = nn.Sequential(
+            InceptionV1Module(in_channels=512, out_channels1=160, out_channels2reduce=112, out_channels2=224,
+                              out_channels3reduce=24, out_channels3=64, out_channels4=64),
+            InceptionV1Module(in_channels=512, out_channels1=128, out_channels2reduce=128, out_channels2=256,
+                              out_channels3reduce=24, out_channels3=64, out_channels4=64),
+            InceptionV1Module(in_channels=512, out_channels1=112, out_channels2reduce=144, out_channels2=288,
+                              out_channels3reduce=32, out_channels3=64, out_channels4=64),
+        )
+
+        self.auxiliary2_avgpool = nn.AvgPool2d(kernel_size=5, stride=3)
+        self.auxiliary2_conv1 = ConvBN(in_channels=528, out_channels=128, kernel_size=1)
+        self.auxiliary2_linear1 = nn.Linear(in_features=128*4*4, out_features=1024)
+        self.auxiliary2_relu = nn.ReLU6(inplace=True)
+        self.auxiliary2_dropout = nn.Dropout(p=0.7)
+        self.auxiliary2_linear2 = nn.Linear(in_features=1024, out_features=num_class)
+
+        self.block4_3 = nn.Sequential(
+            InceptionV1Module(in_channels=528, out_channels1=256, out_channels2reduce=160, out_channels2=320,
+                              out_channels3reduce=32, out_channels3=128, out_channels4=128),
             nn.MaxPool2d(kernel_size=3, stride=2, padding=1),
         )
 
@@ -76,19 +98,30 @@ class InceptionV1(nn.Module):
         x = self.block1(x)
         x = self.block2(x)
         x = self.block3(x)
-        x = self.block4(x)
-        x = self.block5(x)
-        x = self.avgpool(x)
-        x = self.dropout(x)
-        x = x.view(x.size(0), -1)
-        out = self.linear(x)
-        return out
+        out1 = x = self.block4_1(x)
+        out1 = self.auxiliary1_conv1(self.auxiliary1_avgpool(out1))
+        out1 = out1.view(out1.size(0), -1)
+        out1 = self.auxiliary1_linear2(self.auxiliary1_dropout(self.auxiliary1_relu(self.auxiliary1_linear1(out1))))
 
+        out2 = x = self.block4_2(x)
+        out2 = self.auxiliary2_conv1(self.auxiliary2_avgpool(out2))
+        out2 = out2.view(out2.size(0), -1)
+        out2 = self.auxiliary2_linear2(self.auxiliary2_dropout(self.auxiliary2_relu(self.auxiliary2_linear1(out2))))
+
+        x = self.block4_3(x)
+        out3 = self.block5(x)
+        out3 = self.avgpool(out3)
+        out3 = self.dropout(out3)
+        out3 = out3.view(out3.size(0), -1)
+        out3 = self.linear(out3)
+        return out1, out2, out3
 
 if __name__=='__main__':
     model = InceptionV1()
     print(model)
 
     input = torch.randn(1, 3, 224, 224)
-    out = model(input)
-    print(out.shape)
+    out1,out2,out3 = model(input)
+    print(out1.shape)
+    print(out2.shape)
+    print(out3.shape)
