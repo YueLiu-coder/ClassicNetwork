@@ -19,9 +19,9 @@ def ConvBNReLUFactorization(in_channels,out_channels,kernel_sizes,paddings):
         nn.ReLU6(inplace=True),
     )
 
-class InceptionV2ModuleA(nn.Module):
+class InceptionV3ModuleA(nn.Module):
     def __init__(self, in_channels,out_channels1,out_channels2reduce, out_channels2, out_channels3reduce, out_channels3, out_channels4):
-        super(InceptionV2ModuleA, self).__init__()
+        super(InceptionV3ModuleA, self).__init__()
 
         self.branch1 = ConvBNReLU(in_channels=in_channels,out_channels=out_channels1,kernel_size=1)
 
@@ -49,9 +49,9 @@ class InceptionV2ModuleA(nn.Module):
         out = torch.cat([out1, out2, out3, out4], dim=1)
         return out
 
-class InceptionV2ModuleB(nn.Module):
+class InceptionV3ModuleB(nn.Module):
     def __init__(self, in_channels,out_channels1,out_channels2reduce, out_channels2, out_channels3reduce, out_channels3, out_channels4):
-        super(InceptionV2ModuleB, self).__init__()
+        super(InceptionV3ModuleB, self).__init__()
 
         self.branch1 = ConvBNReLU(in_channels=in_channels,out_channels=out_channels1,kernel_size=1)
 
@@ -82,9 +82,9 @@ class InceptionV2ModuleB(nn.Module):
         out = torch.cat([out1, out2, out3, out4], dim=1)
         return out
 
-class InceptionV2ModuleC(nn.Module):
+class InceptionV3ModuleC(nn.Module):
     def __init__(self, in_channels,out_channels1,out_channels2reduce, out_channels2, out_channels3reduce, out_channels3, out_channels4):
-        super(InceptionV2ModuleC, self).__init__()
+        super(InceptionV3ModuleC, self).__init__()
 
         self.branch1 = ConvBNReLU(in_channels=in_channels,out_channels=out_channels1,kernel_size=1)
 
@@ -112,11 +112,14 @@ class InceptionV2ModuleC(nn.Module):
         out = torch.cat([out1, out2, out3, out4], dim=1)
         return out
 
-class InceptionV2ModuleD(nn.Module):
-    def __init__(self, in_channels,out_channels1,out_channels2reduce, out_channels2):
-        super(InceptionV2ModuleD, self).__init__()
+class InceptionV3ModuleD(nn.Module):
+    def __init__(self, in_channels,out_channels1reduce,out_channels1,out_channels2reduce, out_channels2):
+        super(InceptionV3ModuleD, self).__init__()
 
-        self.branch1 = ConvBNReLU(in_channels=in_channels, out_channels=out_channels1, kernel_size=3,stride=2)
+        self.branch1 = nn.Sequential(
+            ConvBNReLU(in_channels=in_channels, out_channels=out_channels1reduce, kernel_size=1),
+            ConvBNReLU(in_channels=out_channels1reduce, out_channels=out_channels1, kernel_size=3,stride=2)
+        )
 
         self.branch2 = nn.Sequential(
             ConvBNReLU(in_channels=in_channels, out_channels=out_channels2reduce, kernel_size=1),
@@ -134,9 +137,9 @@ class InceptionV2ModuleD(nn.Module):
         return out
 
 
-class InceptionV2ModuleE(nn.Module):
+class InceptionV3ModuleE(nn.Module):
     def __init__(self, in_channels, out_channels1reduce,out_channels1, out_channels2reduce, out_channels2):
-        super(InceptionV2ModuleE, self).__init__()
+        super(InceptionV3ModuleE, self).__init__()
 
         self.branch1 = nn.Sequential(
             ConvBNReLU(in_channels=in_channels, out_channels=out_channels1reduce, kernel_size=1),
@@ -195,25 +198,25 @@ class InceptionV3(nn.Module):
         )
 
         self.block3 = nn.Sequential(
-            InceptionV2ModuleA(in_channels=192, out_channels1=64,out_channels2reduce=48, out_channels2=64, out_channels3reduce=64, out_channels3=96, out_channels4=32),
-            InceptionV2ModuleA(in_channels=256, out_channels1=64,out_channels2reduce=48, out_channels2=64, out_channels3reduce=64, out_channels3=96, out_channels4=64),
-            InceptionV2ModuleA(in_channels=288, out_channels1=64,out_channels2reduce=48, out_channels2=64, out_channels3reduce=64, out_channels3=96, out_channels4=64)
+            InceptionV3ModuleA(in_channels=192, out_channels1=64,out_channels2reduce=48, out_channels2=64, out_channels3reduce=64, out_channels3=96, out_channels4=32),
+            InceptionV3ModuleA(in_channels=256, out_channels1=64,out_channels2reduce=48, out_channels2=64, out_channels3reduce=64, out_channels3=96, out_channels4=64),
+            InceptionV3ModuleA(in_channels=288, out_channels1=64,out_channels2reduce=48, out_channels2=64, out_channels3reduce=64, out_channels3=96, out_channels4=64)
         )
 
         self.block4 = nn.Sequential(
-            InceptionV2ModuleD(in_channels=288,out_channels1=384,out_channels2reduce=64, out_channels2=96),
-            InceptionV2ModuleB(in_channels=768, out_channels1=192, out_channels2reduce=128,  out_channels2=192, out_channels3reduce=128,out_channels3=192, out_channels4=192),
-            InceptionV2ModuleB(in_channels=768, out_channels1=192, out_channels2reduce=160,  out_channels2=192,out_channels3reduce=160, out_channels3=192, out_channels4=192),
-            InceptionV2ModuleB(in_channels=768, out_channels1=192, out_channels2reduce=160, out_channels2=192,out_channels3reduce=160, out_channels3=192, out_channels4=192),
-            InceptionV2ModuleB(in_channels=768, out_channels1=192, out_channels2reduce=192, out_channels2=192,out_channels3reduce=192, out_channels3=192, out_channels4=192),
+            InceptionV3ModuleD(in_channels=288, out_channels1reduce=384,out_channels1=384,out_channels2reduce=64, out_channels2=96),
+            InceptionV3ModuleB(in_channels=768, out_channels1=192, out_channels2reduce=128,  out_channels2=192, out_channels3reduce=128,out_channels3=192, out_channels4=192),
+            InceptionV3ModuleB(in_channels=768, out_channels1=192, out_channels2reduce=160,  out_channels2=192,out_channels3reduce=160, out_channels3=192, out_channels4=192),
+            InceptionV3ModuleB(in_channels=768, out_channels1=192, out_channels2reduce=160, out_channels2=192,out_channels3reduce=160, out_channels3=192, out_channels4=192),
+            InceptionV3ModuleB(in_channels=768, out_channels1=192, out_channels2reduce=192, out_channels2=192,out_channels3reduce=192, out_channels3=192, out_channels4=192),
         )
         if self.stage=='train':
             self.aux_logits = InceptionAux(in_channels=768,out_channels=num_classes)
 
         self.block5 = nn.Sequential(
-            InceptionV2ModuleE(in_channels=768, out_channels1reduce=192,out_channels1=320, out_channels2reduce=192, out_channels2=192),
-            InceptionV2ModuleC(in_channels=1280, out_channels1=320, out_channels2reduce=384,  out_channels2=384, out_channels3reduce=448,out_channels3=384, out_channels4=192),
-            InceptionV2ModuleC(in_channels=2048, out_channels1=320, out_channels2reduce=384, out_channels2=384,out_channels3reduce=448, out_channels3=384, out_channels4=192),
+            InceptionV3ModuleE(in_channels=768, out_channels1reduce=192,out_channels1=320, out_channels2reduce=192, out_channels2=192),
+            InceptionV3ModuleC(in_channels=1280, out_channels1=320, out_channels2reduce=384,  out_channels2=384, out_channels3reduce=448,out_channels3=384, out_channels4=192),
+            InceptionV3ModuleC(in_channels=2048, out_channels1=320, out_channels2reduce=384, out_channels2=384,out_channels3reduce=448, out_channels3=384, out_channels4=192),
         )
 
         self.max_pool = nn.MaxPool2d(kernel_size=8,stride=1)
