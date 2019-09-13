@@ -34,7 +34,7 @@ class VGGNet(nn.Module):
         layers.append(Conv3x3BNReLU(in_channels,out_channels))
         for i in range(1,block_num):
             layers.append(Conv3x3BNReLU(out_channels,out_channels))
-        layers.append(nn.MaxPool2d(kernel_size=2,stride=2))
+        layers.append(nn.MaxPool2d(kernel_size=2,stride=2, ceil_mode=False))
         return nn.Sequential(*layers)
 
     def forward(self, x):
@@ -58,7 +58,7 @@ def VGG19():
     return model
 
 if __name__ == '__main__':
-    model = VGG19()
+    model = VGG16()
     print(model)
 
     input = torch.randn(1,3,224,224)
